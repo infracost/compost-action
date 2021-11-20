@@ -53,7 +53,8 @@ jobs:
       - name: Check comment
         shell: bash
         run: |
-          if [ "${{ steps.get_comment.outputs.latest }}" != "$(cat ./testdata/test-body-file.txt)" ]; then
-            echo "error::Expected comment '$(cat ./testdata/test-body-file.txt)' got '${{ steps.get_comment.outputs.latest }}'"
+          expected=$(cat ./testdata/test-body-file.txt)
+          if [ "${{ steps.get_comment.outputs.latest }}" != "$expected" ]; then
+            echo "error::Expected comment '$expected' got '${{ steps.get_comment.outputs.latest }}'"
             exit 1
           fi
