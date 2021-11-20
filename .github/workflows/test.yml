@@ -51,6 +51,7 @@ jobs:
           behavior: latest
           tag: test-body-file
       - name: Check comment
+        shell: bash
         run: |
           if [ "${{ steps.get_comment.outputs.latest }}" != "$(cat ./testdata/test-body-file.txt)" ]; then
             echo "error::Expected comment '$(cat ./testdata/test-body-file.txt)' got '${{ steps.get_comment.outputs.latest }}'"
