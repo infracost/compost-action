@@ -35,7 +35,9 @@ The action supports the following inputs:
 
 - `repository`: Optional, defaults to `${{ github.repository }}`.  The GitHub owner and repository name. For example, 'infracost/compost-action'.
 
-- `pullRequestNumber:`: Optional, defaults to the pull request number of the current event..
+- `pullRequestNumber`: Optional, defaults to the pull request number of the current event.
+
+- `GITHUB_TOKEN`: Optional, default to `${{ github.token }}`.
 
 ## Outputs
 

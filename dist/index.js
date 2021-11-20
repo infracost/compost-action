@@ -27064,8 +27064,10 @@ function comment() {
             if (!repository) {
                 throw new Error('repository is required');
             }
+            const token = core.getInput('GITHUB_TOKEN', { required: true });
             const compost = new compost_1.default({
                 tag,
+                token,
                 logger: { debug: core.debug, warn: core.warning, info: core.info },
             });
             let targetRef;

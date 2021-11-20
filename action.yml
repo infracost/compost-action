@@ -25,6 +25,10 @@ inputs:
     description: 'The GitHub owner and repository name. For example, infracost/compost-action. This defaults to {{ github.repository }}.'
     default: '${{ github.repository }}'
     required: false
+  GITHUB_TOKEN:
+    description: 'The GitHub access token (e.g. secrets.GITHUB_TOKEN) used to get the list of Infracost CLI versions. This defaults to {{ github.token }}.'
+    default: '${{ github.token }}'
+    required: false
 outputs:
   latest:
     description: The body of the latest existing comment when using behavior 'latest'.

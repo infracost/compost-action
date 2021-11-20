@@ -3,6 +3,7 @@ import * as github from '@actions/github';
 import Compost from '@infracost/compost';
 import fs from 'fs';
 import { GetBehavior, PostBehavior } from '@infracost/compost/dist/types';
+import { GitHubOptions } from '@infracost/compost/dist/platforms/github';
 
 const validBehavior = [
   'update',
@@ -63,10 +64,13 @@ async function comment(): Promise<void> {
       throw new Error('repository is required');
     }
 
+    const token = core.getInput('GITHUB_TOKEN', { required: true });
+
     const compost = new Compost({
       tag,
+      token,
       logger: { debug: core.debug, warn: core.warning, info: core.info },
-    });
+    } as GitHubOptions);
 
     let targetRef: string | number | undefined;
     if (targetType === 'pr') {
