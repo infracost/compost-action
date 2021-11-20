@@ -27020,6 +27020,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const compost_1 = __importDefault(__nccwpck_require__(1705));
 const fs_1 = __importDefault(__nccwpck_require__(5747));
+const util_1 = __nccwpck_require__(4493);
 const validBehavior = [
     'update',
     'delete_and_new',
@@ -27088,7 +27089,7 @@ function comment() {
             if (behavior === 'latest') {
                 const latestComment = yield compost.getComment('github', repository, targetType, targetRef, behavior);
                 if (latestComment) {
-                    core.setOutput('latest', latestComment.body);
+                    core.setOutput('latest', (0, util_1.stripMarkdownTag)(latestComment.body));
                 }
             }
             else {
