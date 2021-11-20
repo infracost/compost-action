@@ -42,7 +42,7 @@ jobs:
         uses: ./
         with:
           behavior: delete_and_new
-          bodyFile: ./github/workflows/test-body-file.txt
+          bodyFile: ./testdata/test-body-file.txt
           tag: test-body-file
       - name: Get comment
         uses: ./
