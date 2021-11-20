@@ -4,6 +4,7 @@ import Compost from '@infracost/compost';
 import fs from 'fs';
 import { GetBehavior, PostBehavior } from '@infracost/compost/dist/types';
 import { GitHubOptions } from '@infracost/compost/dist/platforms/github';
+import { stripMarkdownTag } from '@infracost/compost/dist/util';
 
 const validBehavior = [
   'update',
@@ -96,7 +97,7 @@ async function comment(): Promise<void> {
         behavior as GetBehavior
       );
       if (latestComment) {
-        core.setOutput('latest', latestComment.body);
+        core.setOutput('latest', stripMarkdownTag(latestComment.body));
       }
     } else {
       const body = loadBody();
