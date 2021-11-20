@@ -22,7 +22,7 @@ jobs:
         with:
           body: "This is a test comment."
       - name: Get comment
-        uses: .
+        uses: ./
         id: get_comment
         with:
           behaviour: latest
