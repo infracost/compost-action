@@ -52,7 +52,7 @@ jobs:
           tag: test-body-file
       - name: Check comment
         run: |
-          if [ "${{ steps.get_comment.outputs.latest }}" != "This is a test body file comment.\n" ]; then
-            echo "error::Expected comment 'This is a test body file  comment.\\n' got '${{ steps.get_comment.outputs.latest }}'"
+          if [ "${{ steps.get_comment.outputs.latest }}" != "$(cat ./testdata/test-body-file.txt)" ]; then
+            echo "error::Expected comment '$(cat ./testdata/test-body-file.txt)' got '${{ steps.get_comment.outputs.latest }}'"
             exit 1
           fi
