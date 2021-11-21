@@ -14,7 +14,7 @@ jobs:
     name: Post comment
     steps:
       - name: Comment
-        uses: infracost/compost@master
+        uses: infracost/compost-action@master
         with: 
           body: "This is a compost comment!"
 ```
