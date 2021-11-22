@@ -83,6 +83,9 @@ async function comment(): Promise<void> {
     let result: DetectResult = null;
     try {
       result = detector.detect();
+      logger.debug(
+        `Detected {platform:'${result.platform}' project:'${result.project}' targetType:'${result.targetType}' targetRef:'${result.targetRef}'}`
+      );
     } catch (err) {
       if (err instanceof Error && err.name === DetectError.name) {
         logger.debug(err.message);
