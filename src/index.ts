@@ -75,6 +75,7 @@ async function comment(): Promise<void> {
       );
     }
 
+    process.env.GITHUB_TOKEN = token; // Need to set the environment variable because the detector requires it to detect github.
     const detector = new GitHubActionsDetector({
       targetTypes: inputTargetType ? [inputTargetType] : undefined,
       logger,

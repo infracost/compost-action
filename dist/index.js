@@ -26853,6 +26853,7 @@ function comment() {
             if (inputTargetType && !validTargetType.includes(inputTargetType)) {
                 throw new Error(`Invalid targetType '${inputTargetType}' must be one of: ${validTargetType.join(', ')}`);
             }
+            process.env.GITHUB_TOKEN = token; // Need to set the environment variable because the detector requires it to detect github.
             const detector = new githubActions_1.GitHubActionsDetector({
                 targetTypes: inputTargetType ? [inputTargetType] : undefined,
                 logger,
