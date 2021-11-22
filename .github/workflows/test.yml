@@ -50,6 +50,7 @@ jobs:
         with:
           behavior: latest
           tag: test-body-file
+          targetType: commit
       - name: Check comment
         shell: bash
         run: |
