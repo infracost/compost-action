@@ -26814,7 +26814,7 @@ const validBehavior = [
     'new',
     'latest',
 ];
-const validTargetType = ['pr', 'comment'];
+const validTargetType = ['pr', 'commit'];
 function loadBody() {
     const body = core.getInput('body');
     if (body) {

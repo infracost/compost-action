@@ -44,12 +44,14 @@ jobs:
           behavior: delete_and_new
           bodyFile: ./testdata/test-body-file.txt
           tag: test-body-file
+          targetType: commit
       - name: Get comment
         uses: ./
         id: get_comment
         with:
           behavior: latest
           tag: test-body-file
+          targetType: commit
       - name: Check comment
         shell: bash
         run: |
