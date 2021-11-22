@@ -1,10 +1,16 @@
 import * as core from '@actions/core';
-import * as github from '@actions/github';
 import Compost from '@infracost/compost';
 import fs from 'fs';
-import { GetBehavior, PostBehavior } from '@infracost/compost/dist/types';
+import {
+  DetectResult,
+  GetBehavior,
+  PostBehavior,
+  TargetType,
+} from '@infracost/compost/dist/types';
 import { GitHubOptions } from '@infracost/compost/dist/platforms/github';
 import { stripMarkdownTag } from '@infracost/compost/dist/util';
+import { GitHubActionsDetector } from '@infracost/compost/dist/detect/githubActions';
+import { DetectError } from '@infracost/compost/dist/detect';
 
 const validBehavior = [
   'update',
@@ -39,6 +45,8 @@ function loadBody(): string {
 
 async function comment(): Promise<void> {
   try {
+    const logger = { debug: core.debug, warn: core.warning, info: core.info };
+
     const behavior = core.getInput('behavior', { required: true });
     if (!validBehavior.includes(behavior)) {
       throw new Error(
@@ -48,50 +56,62 @@ async function comment(): Promise<void> {
       );
     }
 
-    const targetType = core.getInput('targetType', { required: true });
-    if (!validTargetType.includes(targetType)) {
-      throw new Error(
-        `Invalid targetType '${targetType}' must be one of: ${validTargetType.join(
-          ', '
-        )}`
-      );
-    }
-
     const tag = core.getInput('tag');
-
-    const repository =
-      core.getInput('repository') || process.env.GITHUB_REPOSITORY;
-    if (!repository) {
-      throw new Error('repository is required');
-    }
 
     const token = core.getInput('GITHUB_TOKEN', { required: true });
 
     const compost = new Compost({
       tag,
       token,
-      logger: { debug: core.debug, warn: core.warning, info: core.info },
+      logger,
     } as GitHubOptions);
 
-    let targetRef: string | number | undefined;
-    if (targetType === 'pr') {
-      targetRef =
-        core.getInput('pullRequestNumber') ||
-        github.context?.payload?.pull_request?.number;
-    } else if (targetType === 'commit') {
-      targetRef = process.env.GITHUB_SHA;
-    } else {
-      throw new Error('targetType is required');
+    const inputTargetType = core.getInput('targetType') as TargetType;
+    if (inputTargetType && !validTargetType.includes(inputTargetType)) {
+      throw new Error(
+        `Invalid targetType '${inputTargetType}' must be one of: ${validTargetType.join(
+          ', '
+        )}`
+      );
     }
 
+    const detector = new GitHubActionsDetector({
+      targetTypes: inputTargetType ? [inputTargetType] : undefined,
+      logger,
+    });
+
+    let result: DetectResult = null;
+    try {
+      result = detector.detect();
+    } catch (err) {
+      if (err instanceof Error && err.name === DetectError.name) {
+        logger.debug(err.message);
+      } else {
+        throw err;
+      }
+    }
+
+    const repo = core.getInput('repo') || result?.project;
+    if (!repo) {
+      throw new Error('repo could not be detected');
+    }
+
+    const targetType = inputTargetType || result?.targetType;
+    if (!targetType) {
+      throw new Error('targetType could not be detected');
+    }
+
+    const prNumber = core.getInput('prNumber');
+    const commitSha = core.getInput('commitSha');
+    const targetRef = prNumber || commitSha || result?.targetRef;
     if (!targetRef) {
-      throw new Error(`No target found for targetType '${targetType}'`);
+      throw new Error('targetRef could not be detected');
     }
 
     if (behavior === 'latest') {
       const latestComment = await compost.getComment(
         'github',
-        repository,
+        repo,
         targetType,
         targetRef,
         behavior as GetBehavior
@@ -103,7 +123,7 @@ async function comment(): Promise<void> {
       const body = loadBody();
       await compost.postComment(
         'github',
-        repository,
+        repo,
         targetType,
         targetRef,
         behavior as PostBehavior,
