@@ -31,7 +31,7 @@ The action supports the following inputs:
 
 - `tag`: Optional.  Customize the comment tag. This is added to the comment as a markdown comment to detect the previously posted comments.
 
-- `repository`: Optional, defaults to the `GITHUB_REPOSITORY` env.  The GitHub owner and repository name. For example, 'infracost/compost-action'.
+- `repo`: Optional, defaults to the `GITHUB_REPOSITORY` env.  The GitHub owner and repository name. For example, 'infracost/compost-action'.
 
 - `targetType`: Optional.  Which objects should be commented on.  May be `pr` or `commit`.
 
