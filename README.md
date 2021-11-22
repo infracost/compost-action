@@ -31,11 +31,11 @@ The action supports the following inputs:
 
 - `tag`: Optional.  Customize the comment tag. This is added to the comment as a markdown comment to detect the previously posted comments.
 
-- `targetType`: Optional, defaults to `pr`.  What object should be commented on.  Must be `pr` or `commit`.  When `commit`, the `behavior` option will be ignored.
+- `repository`: Optional, defaults to the `GITHUB_REPOSITORY` env.  The GitHub owner and repository name. For example, 'infracost/compost-action'.
 
-- `repository`: Optional, defaults to `${{ github.repository }}`.  The GitHub owner and repository name. For example, 'infracost/compost-action'.
+- `targetType`: Optional.  Which objects should be commented on.  May be `pr` or `commit`.
 
-- `pullRequestNumber`: Optional, defaults to the pull request number of the current event.
+- `prNumber`: Optional, defaults to the pull request of the current event. The number of the pull request to be commented on.
 
 - `GITHUB_TOKEN`: Optional, default to `${{ github.token }}`.
 
