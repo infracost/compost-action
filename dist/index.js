@@ -26894,12 +26894,13 @@ function comment() {
             if (behavior === 'latest') {
                 const latestComment = yield compost.getComment('github', repo, targetType, targetRef, behavior);
                 if (latestComment) {
-                    core.setOutput('latest', (0, util_1.stripMarkdownTag)(latestComment.body));
+                    core.setOutput('body', (0, util_1.stripMarkdownTag)(latestComment.body));
                 }
             }
             else {
                 const body = loadBody();
                 yield compost.postComment('github', repo, targetType, targetRef, behavior, body);
+                core.setOutput('body', body);
             }
         }
         catch (e) {

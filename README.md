@@ -41,4 +41,4 @@ The action supports the following inputs:
 
 ## Outputs
 
-- `latest`: The body of the latest existing comment when using behavior 'latest'.
+- `body`: The body of the comment.  This is the latest existing comment when using behavior 'latest', and the comment that was posted otherwise.
