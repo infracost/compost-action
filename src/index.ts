@@ -121,7 +121,7 @@ async function comment(): Promise<void> {
         behavior as GetBehavior
       );
       if (latestComment) {
-        core.setOutput('latest', stripMarkdownTag(latestComment.body));
+        core.setOutput('body', stripMarkdownTag(latestComment.body));
       }
     } else {
       const body = loadBody();
@@ -133,6 +133,7 @@ async function comment(): Promise<void> {
         behavior as PostBehavior,
         body
       );
+      core.setOutput('body', body);
     }
   } catch (e) {
     core.setFailed(e as string | Error);

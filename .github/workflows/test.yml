@@ -28,8 +28,8 @@ jobs:
           behavior: latest
       - name: Check comment
         run: |
-          if [ "${{ steps.get_comment.outputs.latest }}" != "This is a test comment." ]; then
-            echo "error::Expected comment 'This is a test comment.' got '${{ steps.get_comment.outputs.latest }}'"
+          if [ "${{ steps.get_comment.outputs.body }}" != "This is a test comment." ]; then
+            echo "error::Expected comment 'This is a test comment.' got '${{ steps.get_comment.outputs.body }}'"
             exit 1
           fi
   test-body-file:
@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           expected=$(cat ./testdata/test-body-file.txt)
-          actual=$(echo "${{ steps.get_comment.outputs.latest }}")
+          actual=$(echo "${{ steps.get_comment.outputs.body }}")
           if [ "$actual" != "$expected" ]; then
             echo "error::Expected comment '$expected' got '$actual'"
             exit 1

@@ -31,8 +31,8 @@ inputs:
     default: '${{ github.token }}'
     required: false
 outputs:
-  latest:
-    description: The body of the latest existing comment when using behavior 'latest'.
+  body:
+    description: The body of the comment.  This is the latest existing comment when using behavior 'latest', and the comment that was posted otherwise.
 runs:
   using: node12
   main: dist/index.js
