@@ -85,7 +85,7 @@ async function comment(): Promise<void> {
     try {
       result = detector.detect();
       logger.debug(
-        `Detected {platform:'${result.platform}' project:'${result.project}' targetType:'${result.targetType}' targetRef:'${result.targetRef}'}`
+        `Detected {platform:'${result?.platform}' project:'${result?.project}' targetType:'${result?.targetType}' targetRef:'${result?.targetRef}'}`
       );
     } catch (err) {
       if (err instanceof Error && err.name === DetectError.name) {
