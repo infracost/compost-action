@@ -1323,9 +1323,10 @@ class AzureDevOpsPipelinesDetector extends base_1.BaseDetector {
         const repo = this.checkEnvVarExists('BUILD_REPOSITORY_URI');
         let targetType;
         let targetRef;
-        if (this.supportsTargetType('pr')) {
+        if (this.shouldDetectTargetType('pull-request') ||
+            this.shouldDetectTargetType('merge-request')) {
             if (process.env.SYSTEM_PULLREQUEST_PULLREQUESTID) {
-                targetType = 'pr';
+                targetType = 'pull-request';
                 targetRef = Number.parseInt(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID, 10);
                 if (Number.isNaN(targetRef)) {
                     throw new _1.DetectError(`SYSTEM_PULLREQUEST_PULLREQUESTID environment variable is not a valid number`);
@@ -1340,9 +1341,7 @@ class AzureDevOpsPipelinesDetector extends base_1.BaseDetector {
             project: repo,
             targetType,
             targetRef,
-            opts: {
-                token,
-            },
+            token,
         };
     }
     detectGitHub() {
@@ -1353,9 +1352,10 @@ class AzureDevOpsPipelinesDetector extends base_1.BaseDetector {
         const apiUrl = process.env.GITHUB_API_URL;
         let targetType;
         let targetRef;
-        if (this.supportsTargetType('pr')) {
+        if (this.shouldDetectTargetType('pull-request') ||
+            this.shouldDetectTargetType('merge-request')) {
             if (process.env.SYSTEM_PULLREQUEST_PULLREQUESTNUMBER) {
-                targetType = 'pr';
+                targetType = 'pull-request';
                 targetRef = Number.parseInt(process.env.SYSTEM_PULLREQUEST_PULLREQUESTNUMBER, 10);
                 if (Number.isNaN(targetRef)) {
                     throw new _1.DetectError(`SYSTEM_PULLREQUEST_PULLREQUESTNUMBER environment variable is not a valid number`);
@@ -1370,10 +1370,8 @@ class AzureDevOpsPipelinesDetector extends base_1.BaseDetector {
             project: repo,
             targetType,
             targetRef,
-            opts: {
-                token,
-                apiUrl,
-            },
+            token,
+            apiUrl,
         };
     }
 }
@@ -1394,11 +1392,11 @@ const util_1 = __nccwpck_require__(4493);
 class BaseDetector {
     constructor(opts) {
         var _a;
-        this.targetTypes = opts === null || opts === void 0 ? void 0 : opts.targetTypes;
+        this.targetType = opts === null || opts === void 0 ? void 0 : opts.targetType;
         this.logger = (_a = opts === null || opts === void 0 ? void 0 : opts.logger) !== null && _a !== void 0 ? _a : new util_1.NullLogger();
     }
-    supportsTargetType(targetType) {
-        return (this.targetTypes === undefined || this.targetTypes.includes(targetType));
+    shouldDetectTargetType(targetType) {
+        return !this.targetType || this.targetType === targetType;
     }
     static sanitizeValue(value, isSecret) {
         if (isSecret) {
@@ -1454,16 +1452,17 @@ class GitHubActionsDetector extends base_1.BaseDetector {
         if (eventPath) {
             event = JSON.parse(fs.readFileSync(eventPath, 'utf8'));
         }
-        if (this.supportsTargetType('pr')) {
+        if (this.shouldDetectTargetType('pull-request') ||
+            this.shouldDetectTargetType('merge-request')) {
             targetRef = (_a = event === null || event === void 0 ? void 0 : event.pull_request) === null || _a === void 0 ? void 0 : _a.number;
             if (targetRef) {
-                targetType = 'pr';
+                targetType = 'pull-request';
                 if (Number.isNaN(targetRef)) {
                     throw new _1.DetectError(`GITHUB_EVENT_PATH pull_request.number is not a valid number`);
                 }
             }
         }
-        if (!targetRef && this.supportsTargetType('commit')) {
+        if (!targetRef && this.shouldDetectTargetType('commit')) {
             targetType = 'commit';
             // If the event is a pull request, use the head commit SHA
             // since GITHUB_SHA is the last merge commit on ref branch
@@ -1480,10 +1479,8 @@ class GitHubActionsDetector extends base_1.BaseDetector {
             project,
             targetType,
             targetRef,
-            opts: {
-                token,
-                apiUrl,
-            },
+            token,
+            apiUrl,
         };
     }
 }
@@ -1510,9 +1507,10 @@ class GitLabCiDetector extends base_1.BaseDetector {
         const serverUrl = process.env.CI_SERVER_URL;
         let targetType;
         let targetRef;
-        if (this.supportsTargetType('mr') || this.supportsTargetType('pr')) {
+        if (this.shouldDetectTargetType('pull-request') ||
+            this.shouldDetectTargetType('merge-request')) {
             if (process.env.CI_MERGE_REQUEST_IID) {
-                targetType = 'mr';
+                targetType = 'merge-request';
                 targetRef = Number.parseInt(process.env.CI_MERGE_REQUEST_IID, 10);
                 if (Number.isNaN(targetRef)) {
                     throw new _1.DetectError(`CI_MERGE_REQUEST_IID environment variable is not a valid number`);
@@ -1527,10 +1525,8 @@ class GitLabCiDetector extends base_1.BaseDetector {
             project,
             targetType,
             targetRef,
-            opts: {
-                token,
-                serverUrl,
-            },
+            token,
+            serverUrl,
         };
     }
 }
@@ -1558,100 +1554,137 @@ exports.DetectError = DetectError;
 
 /***/ }),
 
+/***/ 743:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.detectorRegistry = void 0;
+const githubActions_1 = __nccwpck_require__(3234);
+const gitlabCi_1 = __nccwpck_require__(6474);
+const azureDevOpsPipelines_1 = __nccwpck_require__(5678);
+// Registry of all detectors
+exports.detectorRegistry = [
+    {
+        displayName: 'GitHub Actions',
+        supportedPlatforms: ['github'],
+        factory: (opts) => new githubActions_1.GitHubActionsDetector(opts),
+    },
+    {
+        displayName: 'GitLab CI',
+        supportedPlatforms: ['gitlab'],
+        factory: (opts) => new gitlabCi_1.GitLabCiDetector(opts),
+    },
+    {
+        displayName: 'Azure DevOps Pipelines',
+        supportedPlatforms: ['azure-devops', 'github'],
+        factory: (opts) => new azureDevOpsPipelines_1.AzureDevOpsPipelinesDetector(opts),
+    },
+];
+
+
+/***/ }),
+
 /***/ 1705:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+const tslib_1 = __nccwpck_require__(4351);
+const autodetect_1 = __nccwpck_require__(4312);
+const azureDevOps_1 = __nccwpck_require__(6525);
+const github_1 = __nccwpck_require__(1422);
+const gitlab_1 = __nccwpck_require__(715);
+exports.default = {
+    autodetect: autodetect_1.autodetect,
+    AzureDevOps: azureDevOps_1.AzureDevOps,
+    GitHub: github_1.GitHub,
+    GitLab: gitlab_1.GitLab,
+};
+(0, tslib_1.__exportStar)(__nccwpck_require__(4133), exports);
+
+
+/***/ }),
+
+/***/ 4312:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.autodetect = void 0;
 const detect_1 = __nccwpck_require__(8056);
-const registry_1 = __nccwpck_require__(3313);
+const registry_1 = __nccwpck_require__(743);
 const util_1 = __nccwpck_require__(4493);
-class Compost {
-    constructor(opts) {
-        var _a, _b;
-        this.opts = opts;
-        this.logger = (_a = opts === null || opts === void 0 ? void 0 : opts.logger) !== null && _a !== void 0 ? _a : new util_1.NullLogger();
-        this.errorHandler = (_b = opts === null || opts === void 0 ? void 0 : opts.errorHandler) !== null && _b !== void 0 ? _b : util_1.defaultErrorHandler;
+const azureDevOps_1 = __nccwpck_require__(6525);
+const github_1 = __nccwpck_require__(1422);
+const gitlab_1 = __nccwpck_require__(715);
+function autodetect(opts) {
+    var _a, _b;
+    const logger = (_a = opts === null || opts === void 0 ? void 0 : opts.logger) !== null && _a !== void 0 ? _a : new util_1.NullLogger();
+    const errorHandler = (_b = opts === null || opts === void 0 ? void 0 : opts.errorHandler) !== null && _b !== void 0 ? _b : util_1.defaultErrorHandler;
+    let detectResult = null;
+    try {
+        detectResult = detectEnvironment(logger, opts === null || opts === void 0 ? void 0 : opts.platform, opts === null || opts === void 0 ? void 0 : opts.targetType);
     }
-    // Find the comment handler for the given platform and target type and construct it
-    commentHandlerFactory(platform, project, targetType, targetRef) {
-        for (const config of registry_1.commentHandlerRegistry) {
-            if (config.platform === platform &&
-                config.supportedTargetTypes.includes(targetType)) {
-                return config.factory(project, targetRef, this.opts);
-            }
-        }
-        const err = `Unable to find comment handler for platform ${platform}, target type ${targetType}`;
-        this.errorHandler(err);
-        throw err;
-    }
-    // Detect the current environment
-    // Checks all the detect functions and finds the first one that returns a result
-    detectEnvironment(targetTypes) {
-        for (const config of registry_1.detectorRegistry) {
-            const detector = config.factory({
-                targetTypes,
-                logger: this.logger,
-            });
-            let result;
-            try {
-                result = detector.detect();
-            }
-            catch (err) {
-                if (err.name === detect_1.DetectError.name) {
-                    this.logger.debug(err.message);
-                    continue;
-                }
-                this.errorHandler(err);
-            }
-            if (result) {
-                this.logger.info(`Detected ${config.displayName}
-    Platform: ${result.platform}
-    Project: ${result.project}
-    Target type: ${result.targetType}
-    Target ref: ${result.targetRef}\n`);
-                return result;
-            }
-        }
+    catch (err) {
+        errorHandler(err);
         return null;
     }
-    async getComment(platform, project, targetType, targetRef, behavior) {
-        const handler = this.commentHandlerFactory(platform, project, targetType, targetRef);
-        let comment = null;
-        switch (behavior) {
-            case 'latest':
-                comment = await handler.latestComment();
-                break;
-            default:
-                // This should never happen
-                throw new Error(`Unknown behavior: ${behavior}`);
-        }
-        return comment;
+    if (!detectResult) {
+        errorHandler('Unable to detect current environment');
+        return null;
     }
-    // Post a comment to the pull/merge request or commit
-    async postComment(platform, project, targetType, targetRef, behavior, body) {
-        const handler = this.commentHandlerFactory(platform, project, targetType, targetRef);
-        switch (behavior) {
-            case 'update':
-                await handler.updateComment(body);
-                break;
-            case 'new':
-                await handler.newComment(body);
-                break;
-            case 'hide_and_new':
-                await handler.hideAndNewComment(body);
-                break;
-            case 'delete_and_new':
-                await handler.deleteAndNewComment(body);
-                break;
-            default:
-                // This should never happen
-                throw new Error(`Unknown behavior: ${behavior}`);
-        }
+    const { platform, project, targetType, targetRef } = detectResult;
+    switch (platform) {
+        case 'github':
+            return new github_1.GitHub(project, targetType, targetRef, detectResult.token, detectResult.apiUrl, opts);
+        case 'gitlab':
+            return new gitlab_1.GitLab(project, targetType, targetRef, detectResult.token, detectResult.serverUrl, opts);
+        case 'azure-devops':
+            return new azureDevOps_1.AzureDevOps(project, targetType, targetRef, detectResult.token, opts);
+            break;
+        default:
+            errorHandler(`Unsupported platform: ${platform}`);
+            return null;
     }
 }
-exports.default = Compost;
+exports.autodetect = autodetect;
+// Detect the current environment
+// Checks all the detect functions and finds the first one that returns a result
+function detectEnvironment(logger, platform, targetType) {
+    for (const config of registry_1.detectorRegistry) {
+        if (platform && !config.supportedPlatforms.includes(platform)) {
+            continue;
+        }
+        const detector = config.factory({
+            logger,
+            targetType,
+        });
+        let result;
+        try {
+            result = detector.detect();
+        }
+        catch (err) {
+            if (err.name === detect_1.DetectError.name) {
+                logger.debug(err.message);
+                continue;
+            }
+            throw err;
+        }
+        if (result) {
+            logger.info(`Detected ${config.displayName}
+  Platform: ${result.platform}
+  Project: ${result.project}
+  Target type: ${result.targetType}
+  Target ref: ${result.targetRef}\n`);
+            return result;
+        }
+    }
+    return null;
+}
 
 
 /***/ }),
@@ -1662,10 +1695,10 @@ exports.default = Compost;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.AzureDevOpsPrHandler = void 0;
+exports.AzureDevOpsPrHandler = exports.AzureDevOps = void 0;
 const tslib_1 = __nccwpck_require__(4351);
 const axios_1 = (0, tslib_1.__importDefault)(__nccwpck_require__(6545));
-const base_1 = (0, tslib_1.__importDefault)(__nccwpck_require__(5661));
+const base_1 = __nccwpck_require__(5661);
 const patTokenLength = 52;
 class AzureDevOpsComment {
     constructor(selfHref, body, createdAt) {
@@ -1685,22 +1718,35 @@ class AzureDevOpsComment {
         return false;
     }
 }
-class AzureDevOpsHandler extends base_1.default {
-    constructor(project, opts) {
+class AzureDevOps extends base_1.BasePlatform {
+    constructor(project, targetType, targetRef, token, opts) {
+        super(opts);
+        if (targetType === 'commit') {
+            this.errorHandler(`Commit target type is not supported by Azure DevOps`);
+        }
+        else {
+            this.handler = new AzureDevOpsPrHandler(project, targetRef, token, opts);
+        }
+    }
+    getHandler() {
+        return this.handler;
+    }
+}
+exports.AzureDevOps = AzureDevOps;
+class AzureDevOpsHandler extends base_1.BaseCommentHandler {
+    constructor(project, token, opts) {
         super(opts);
         this.project = project;
-        this.processOpts(opts);
+        this.token = token;
+        this.token || (this.token = process.env.AZURE_DEVOPS_EXT_PAT);
+        if (!this.token) {
+            this.errorHandler('Azure DevOps token was not specified or could not be detected from the AZURE_DEVOPS_EXT_PAT environment variable');
+        }
         try {
             this.repoApiUrl = AzureDevOpsHandler.parseRepoApiUrl(project);
         }
         catch (err) {
             this.errorHandler(err.message);
-        }
-    }
-    processOpts(opts) {
-        this.token = (opts === null || opts === void 0 ? void 0 : opts.token) || process.env.AZURE_DEVOPS_EXT_PAT;
-        if (!this.token) {
-            this.errorHandler('--azure-devops-token or AZURE_DEVOPS_EXT_PAT environment variable is required');
         }
     }
     // Convert the Azure DevOps repo URL to an API URL
@@ -1727,8 +1773,8 @@ class AzureDevOpsHandler extends base_1.default {
     }
 }
 class AzureDevOpsPrHandler extends AzureDevOpsHandler {
-    constructor(project, prNumber, opts) {
-        super(project, opts);
+    constructor(project, prNumber, token, opts) {
+        super(project, token, opts);
         this.prNumber = prNumber;
     }
     async callFindMatchingComments(tag) {
@@ -1811,11 +1857,54 @@ exports.AzureDevOpsPrHandler = AzureDevOpsPrHandler;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.defaultTag = void 0;
+exports.BaseCommentHandler = exports.BasePlatform = exports.defaultTag = void 0;
 const tslib_1 = __nccwpck_require__(4351);
 const chalk_1 = (0, tslib_1.__importDefault)(__nccwpck_require__(8818));
 const util_1 = __nccwpck_require__(4493);
 exports.defaultTag = 'compost-comment';
+class BasePlatform {
+    constructor(opts) {
+        var _a, _b;
+        this.logger = (_a = opts === null || opts === void 0 ? void 0 : opts.logger) !== null && _a !== void 0 ? _a : new util_1.NullLogger();
+        this.errorHandler = (_b = opts === null || opts === void 0 ? void 0 : opts.errorHandler) !== null && _b !== void 0 ? _b : util_1.defaultErrorHandler;
+    }
+    async getComment(behavior) {
+        const handler = this.getHandler();
+        let comment = null;
+        switch (behavior) {
+            case 'latest':
+                comment = await handler.latestComment();
+                break;
+            default:
+                // This should never happen
+                this.errorHandler(`Unknown behavior: ${behavior}`);
+        }
+        comment = Object.assign(Object.assign({}, comment), { body: (0, util_1.stripMarkdownTag)(comment.body) });
+        return comment;
+    }
+    // Post a comment to the pull/merge request or commit
+    async postComment(behavior, body) {
+        const handler = this.getHandler();
+        switch (behavior) {
+            case 'update':
+                await handler.updateComment(body);
+                break;
+            case 'new':
+                await handler.newComment(body);
+                break;
+            case 'hide-and-new':
+                await handler.hideAndNewComment(body);
+                break;
+            case 'delete-and-new':
+                await handler.deleteAndNewComment(body);
+                break;
+            default:
+                // This should never happen
+                this.errorHandler(`Unknown behavior: ${behavior}`);
+        }
+    }
+}
+exports.BasePlatform = BasePlatform;
 class BaseCommentHandler {
     constructor(opts) {
         var _a, _b;
@@ -1902,7 +1991,7 @@ class BaseCommentHandler {
         await Promise.all(promises);
     }
 }
-exports.default = BaseCommentHandler;
+exports.BaseCommentHandler = BaseCommentHandler;
 
 
 /***/ }),
@@ -1913,11 +2002,10 @@ exports.default = BaseCommentHandler;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GitHubCommitHandler = exports.GitHubPrHandler = void 0;
-const tslib_1 = __nccwpck_require__(4351);
+exports.GitHubCommitHandler = exports.GitHubPrHandler = exports.GitHub = void 0;
 const octokit_1 = __nccwpck_require__(7467);
 const plugin_retry_1 = __nccwpck_require__(6298);
-const base_1 = (0, tslib_1.__importDefault)(__nccwpck_require__(5661));
+const base_1 = __nccwpck_require__(5661);
 const OctokitWithRetries = octokit_1.Octokit.plugin(plugin_retry_1.retry);
 class GitHubComment {
     constructor(globalId, id, body, createdAt, url, isMinimized) {
@@ -1939,11 +2027,38 @@ class GitHubComment {
         return this.isMinimized;
     }
 }
-class GitHubHandler extends base_1.default {
-    constructor(project, opts) {
+class GitHub extends base_1.BasePlatform {
+    constructor(project, targetType, targetRef, token, apiUrl, opts) {
+        super(opts);
+        if (targetType === 'commit') {
+            this.handler = new GitHubCommitHandler(project, targetRef, token, apiUrl, opts);
+        }
+        else {
+            this.handler = new GitHubPrHandler(project, targetRef, token, apiUrl, opts);
+        }
+    }
+    getHandler() {
+        return this.handler;
+    }
+}
+exports.GitHub = GitHub;
+class GitHubHandler extends base_1.BaseCommentHandler {
+    constructor(project, token, apiUrl, opts) {
         super(opts);
         this.project = project;
-        this.processOpts(opts);
+        this.token = token;
+        this.apiUrl = apiUrl;
+        this.opts = opts;
+        this.token || (this.token = process.env.GITHUB_TOKEN);
+        if (!this.token) {
+            this.errorHandler('GitHub token was not specified or could not be detected from the GITHUB_TOKEN environment variable');
+            return;
+        }
+        this.apiUrl || (this.apiUrl = process.env.GITHUB_API_URL || 'https://api.github.com');
+        this.octokit = new OctokitWithRetries({
+            auth: this.token,
+            baseUrl: this.apiUrl,
+        });
         const projectParts = project.split('/', 2);
         if (projectParts.length !== 2) {
             this.errorHandler(`Invalid GitHub repository name: ${project}, expecting owner/repo`);
@@ -1951,23 +2066,10 @@ class GitHubHandler extends base_1.default {
         }
         [this.owner, this.repo] = projectParts;
     }
-    processOpts(opts) {
-        this.token = (opts === null || opts === void 0 ? void 0 : opts.token) || process.env.GITHUB_TOKEN;
-        if (!this.token) {
-            this.errorHandler('--github-token or GITHUB_TOKEN is required');
-            return;
-        }
-        this.apiUrl =
-            (opts === null || opts === void 0 ? void 0 : opts.apiUrl) || process.env.GITHUB_API_URL || 'https://api.github.com';
-        this.octokit = new OctokitWithRetries({
-            auth: this.token,
-            baseUrl: this.apiUrl,
-        });
-    }
 }
 class GitHubPrHandler extends GitHubHandler {
-    constructor(project, prNumber, opts) {
-        super(project, opts);
+    constructor(project, prNumber, token, apiUrl, opts) {
+        super(project, token, apiUrl, opts);
         this.prNumber = prNumber;
     }
     async callFindMatchingComments(tag) {
@@ -2069,8 +2171,8 @@ class GitHubPrHandler extends GitHubHandler {
 exports.GitHubPrHandler = GitHubPrHandler;
 // Commit comments aren't supported by the GraphQL API so this class uses the REST API
 class GitHubCommitHandler extends GitHubHandler {
-    constructor(project, commitSha, opts) {
-        super(project, opts);
+    constructor(project, commitSha, token, apiUrl, opts) {
+        super(project, token, apiUrl, opts);
         this.commitSha = commitSha;
     }
     async callFindMatchingComments(tag) {
@@ -2170,10 +2272,10 @@ exports.GitHubCommitHandler = GitHubCommitHandler;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GitLabMrHandler = void 0;
+exports.GitLabMrHandler = exports.GitLab = void 0;
 const tslib_1 = __nccwpck_require__(4351);
 const axios_1 = (0, tslib_1.__importDefault)(__nccwpck_require__(6545));
-const base_1 = (0, tslib_1.__importDefault)(__nccwpck_require__(5661));
+const base_1 = __nccwpck_require__(5661);
 class GitLabComment {
     constructor(id, body, createdAt, url) {
         this.id = id;
@@ -2192,25 +2294,38 @@ class GitLabComment {
         return false;
     }
 }
-class GitLabHandler extends base_1.default {
-    constructor(project, opts) {
+class GitLab extends base_1.BasePlatform {
+    constructor(project, targetType, targetRef, token, serverUrl, opts) {
+        super(opts);
+        if (targetType === 'commit') {
+            this.errorHandler(`Commit target type is not supported for GitLab yet`);
+        }
+        else {
+            this.handler = new GitLabMrHandler(project, targetRef, token, serverUrl, opts);
+        }
+    }
+    getHandler() {
+        return this.handler;
+    }
+}
+exports.GitLab = GitLab;
+class GitLabHandler extends base_1.BaseCommentHandler {
+    constructor(project, token, serverUrl, opts) {
         super(opts);
         this.project = project;
-        this.processOpts(opts);
-    }
-    processOpts(opts) {
-        this.token = (opts === null || opts === void 0 ? void 0 : opts.token) || process.env.GITLAB_TOKEN;
+        this.token = token;
+        this.serverUrl = serverUrl;
+        this.token || (this.token = process.env.GITLAB_TOKEN);
         if (!this.token) {
-            this.errorHandler('--gitlab-token or GITLAB_TOKEN is required');
+            this.errorHandler('GitLab token was not specified or could not be detected from the GITLAB_TOKEN environment variable');
             return;
         }
-        this.serverUrl =
-            (opts === null || opts === void 0 ? void 0 : opts.serverUrl) || process.env.CI_SERVER_URL || 'https://gitlab.com';
+        this.serverUrl || (this.serverUrl = process.env.CI_SERVER_URL || 'https://gitlab.com');
     }
 }
 class GitLabMrHandler extends GitLabHandler {
-    constructor(project, mrNumber, opts) {
-        super(project, opts);
+    constructor(project, mrNumber, token, gitlabApiUrl, opts) {
+        super(project, token, gitlabApiUrl, opts);
         this.mrNumber = mrNumber;
     }
     async callFindMatchingComments(tag) {
@@ -2311,63 +2426,12 @@ exports.GitLabMrHandler = GitLabMrHandler;
 
 /***/ }),
 
-/***/ 3313:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ 4133:
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.commentHandlerRegistry = exports.detectorRegistry = void 0;
-const azureDevOps_1 = __nccwpck_require__(6525);
-const github_1 = __nccwpck_require__(1422);
-const gitlab_1 = __nccwpck_require__(715);
-const githubActions_1 = __nccwpck_require__(3234);
-const gitlabCi_1 = __nccwpck_require__(6474);
-const azureDevOpsPipelines_1 = __nccwpck_require__(5678);
-// Registry of all detectors
-exports.detectorRegistry = [
-    {
-        displayName: 'GitHub Actions',
-        factory: (opts) => new githubActions_1.GitHubActionsDetector(opts),
-    },
-    {
-        displayName: 'GitLab CI',
-        factory: (opts) => new gitlabCi_1.GitLabCiDetector(opts),
-    },
-    {
-        displayName: 'Azure DevOps Pipelines',
-        factory: (opts) => new azureDevOpsPipelines_1.AzureDevOpsPipelinesDetector(opts),
-    },
-];
-// Registry of all comment handlers.
-// Includes a factory to construct it, which platform
-// and target types it supports (pr, mr, commit)
-exports.commentHandlerRegistry = [
-    {
-        displayName: 'GitHub pull request',
-        platform: 'github',
-        supportedTargetTypes: ['pr'],
-        factory: (project, prNumber, opts) => new github_1.GitHubPrHandler(project, prNumber, opts),
-    },
-    {
-        displayName: 'GitHub commit',
-        platform: 'github',
-        supportedTargetTypes: ['commit'],
-        factory: (project, commitSha, opts) => new github_1.GitHubCommitHandler(project, commitSha, opts),
-    },
-    {
-        displayName: 'GitLab merge request',
-        platform: 'gitlab',
-        supportedTargetTypes: ['pr', 'mr'],
-        factory: (project, mrNumber, opts) => new gitlab_1.GitLabMrHandler(project, mrNumber, opts),
-    },
-    {
-        displayName: 'Azure DevOps pull request',
-        platform: 'azure-devops',
-        supportedTargetTypes: ['pr'],
-        factory: (project, prNumber, opts) => new azureDevOps_1.AzureDevOpsPrHandler(project, prNumber, opts),
-    },
-];
 
 
 /***/ }),
@@ -8267,7 +8331,7 @@ const createLogger = logger => _objectSpread2({
 
 // THIS FILE IS GENERATED - DO NOT EDIT DIRECTLY
 // make edits in scripts/generate-types.ts
-const emitterEventNames = ["branch_protection_rule", "branch_protection_rule.created", "branch_protection_rule.deleted", "branch_protection_rule.edited", "check_run", "check_run.completed", "check_run.created", "check_run.requested_action", "check_run.rerequested", "check_suite", "check_suite.completed", "check_suite.requested", "check_suite.rerequested", "code_scanning_alert", "code_scanning_alert.appeared_in_branch", "code_scanning_alert.closed_by_user", "code_scanning_alert.created", "code_scanning_alert.fixed", "code_scanning_alert.reopened", "code_scanning_alert.reopened_by_user", "commit_comment", "commit_comment.created", "content_reference", "content_reference.created", "create", "delete", "deploy_key", "deploy_key.created", "deploy_key.deleted", "deployment", "deployment.created", "deployment_status", "deployment_status.created", "discussion", "discussion.answered", "discussion.category_changed", "discussion.created", "discussion.deleted", "discussion.edited", "discussion.labeled", "discussion.locked", "discussion.pinned", "discussion.transferred", "discussion.unanswered", "discussion.unlabeled", "discussion.unlocked", "discussion.unpinned", "discussion_comment", "discussion_comment.created", "discussion_comment.deleted", "discussion_comment.edited", "fork", "github_app_authorization", "github_app_authorization.revoked", "gollum", "installation", "installation.created", "installation.deleted", "installation.new_permissions_accepted", "installation.suspend", "installation.unsuspend", "installation_repositories", "installation_repositories.added", "installation_repositories.removed", "issue_comment", "issue_comment.created", "issue_comment.deleted", "issue_comment.edited", "issues", "issues.assigned", "issues.closed", "issues.deleted", "issues.demilestoned", "issues.edited", "issues.labeled", "issues.locked", "issues.milestoned", "issues.opened", "issues.pinned", "issues.reopened", "issues.transferred", "issues.unassigned", "issues.unlabeled", "issues.unlocked", "issues.unpinned", "label", "label.created", "label.deleted", "label.edited", "marketplace_purchase", "marketplace_purchase.cancelled", "marketplace_purchase.changed", "marketplace_purchase.pending_change", "marketplace_purchase.pending_change_cancelled", "marketplace_purchase.purchased", "member", "member.added", "member.edited", "member.removed", "membership", "membership.added", "membership.removed", "meta", "meta.deleted", "milestone", "milestone.closed", "milestone.created", "milestone.deleted", "milestone.edited", "milestone.opened", "org_block", "org_block.blocked", "org_block.unblocked", "organization", "organization.deleted", "organization.member_added", "organization.member_invited", "organization.member_removed", "organization.renamed", "package", "package.published", "package.updated", "page_build", "ping", "project", "project.closed", "project.created", "project.deleted", "project.edited", "project.reopened", "project_card", "project_card.converted", "project_card.created", "project_card.deleted", "project_card.edited", "project_card.moved", "project_column", "project_column.created", "project_column.deleted", "project_column.edited", "project_column.moved", "public", "pull_request", "pull_request.assigned", "pull_request.auto_merge_disabled", "pull_request.auto_merge_enabled", "pull_request.closed", "pull_request.converted_to_draft", "pull_request.edited", "pull_request.labeled", "pull_request.locked", "pull_request.opened", "pull_request.ready_for_review", "pull_request.reopened", "pull_request.review_request_removed", "pull_request.review_requested", "pull_request.synchronize", "pull_request.unassigned", "pull_request.unlabeled", "pull_request.unlocked", "pull_request_review", "pull_request_review.dismissed", "pull_request_review.edited", "pull_request_review.submitted", "pull_request_review_comment", "pull_request_review_comment.created", "pull_request_review_comment.deleted", "pull_request_review_comment.edited", "push", "release", "release.created", "release.deleted", "release.edited", "release.prereleased", "release.published", "release.released", "release.unpublished", "repository", "repository.archived", "repository.created", "repository.deleted", "repository.edited", "repository.privatized", "repository.publicized", "repository.renamed", "repository.transferred", "repository.unarchived", "repository_dispatch", "repository_import", "repository_vulnerability_alert", "repository_vulnerability_alert.create", "repository_vulnerability_alert.dismiss", "repository_vulnerability_alert.resolve", "secret_scanning_alert", "secret_scanning_alert.created", "secret_scanning_alert.reopened", "secret_scanning_alert.resolved", "security_advisory", "security_advisory.performed", "security_advisory.published", "security_advisory.updated", "security_advisory.withdrawn", "sponsorship", "sponsorship.cancelled", "sponsorship.created", "sponsorship.edited", "sponsorship.pending_cancellation", "sponsorship.pending_tier_change", "sponsorship.tier_changed", "star", "star.created", "star.deleted", "status", "team", "team.added_to_repository", "team.created", "team.deleted", "team.edited", "team.removed_from_repository", "team_add", "watch", "watch.started", "workflow_dispatch", "workflow_job", "workflow_job.completed", "workflow_job.in_progress", "workflow_job.queued", "workflow_job.started", "workflow_run", "workflow_run.completed", "workflow_run.requested"];
+const emitterEventNames = ["branch_protection_rule", "branch_protection_rule.created", "branch_protection_rule.deleted", "branch_protection_rule.edited", "check_run", "check_run.completed", "check_run.created", "check_run.requested_action", "check_run.rerequested", "check_suite", "check_suite.completed", "check_suite.requested", "check_suite.rerequested", "code_scanning_alert", "code_scanning_alert.appeared_in_branch", "code_scanning_alert.closed_by_user", "code_scanning_alert.created", "code_scanning_alert.fixed", "code_scanning_alert.reopened", "code_scanning_alert.reopened_by_user", "commit_comment", "commit_comment.created", "content_reference", "content_reference.created", "create", "delete", "deploy_key", "deploy_key.created", "deploy_key.deleted", "deployment", "deployment.created", "deployment_status", "deployment_status.created", "discussion", "discussion.answered", "discussion.category_changed", "discussion.created", "discussion.deleted", "discussion.edited", "discussion.labeled", "discussion.locked", "discussion.pinned", "discussion.transferred", "discussion.unanswered", "discussion.unlabeled", "discussion.unlocked", "discussion.unpinned", "discussion_comment", "discussion_comment.created", "discussion_comment.deleted", "discussion_comment.edited", "fork", "github_app_authorization", "github_app_authorization.revoked", "gollum", "installation", "installation.created", "installation.deleted", "installation.new_permissions_accepted", "installation.suspend", "installation.unsuspend", "installation_repositories", "installation_repositories.added", "installation_repositories.removed", "issue_comment", "issue_comment.created", "issue_comment.deleted", "issue_comment.edited", "issues", "issues.assigned", "issues.closed", "issues.deleted", "issues.demilestoned", "issues.edited", "issues.labeled", "issues.locked", "issues.milestoned", "issues.opened", "issues.pinned", "issues.reopened", "issues.transferred", "issues.unassigned", "issues.unlabeled", "issues.unlocked", "issues.unpinned", "label", "label.created", "label.deleted", "label.edited", "marketplace_purchase", "marketplace_purchase.cancelled", "marketplace_purchase.changed", "marketplace_purchase.pending_change", "marketplace_purchase.pending_change_cancelled", "marketplace_purchase.purchased", "member", "member.added", "member.edited", "member.removed", "membership", "membership.added", "membership.removed", "meta", "meta.deleted", "milestone", "milestone.closed", "milestone.created", "milestone.deleted", "milestone.edited", "milestone.opened", "org_block", "org_block.blocked", "org_block.unblocked", "organization", "organization.deleted", "organization.member_added", "organization.member_invited", "organization.member_removed", "organization.renamed", "package", "package.published", "package.updated", "page_build", "ping", "project", "project.closed", "project.created", "project.deleted", "project.edited", "project.reopened", "project_card", "project_card.converted", "project_card.created", "project_card.deleted", "project_card.edited", "project_card.moved", "project_column", "project_column.created", "project_column.deleted", "project_column.edited", "project_column.moved", "public", "pull_request", "pull_request.assigned", "pull_request.auto_merge_disabled", "pull_request.auto_merge_enabled", "pull_request.closed", "pull_request.converted_to_draft", "pull_request.edited", "pull_request.labeled", "pull_request.locked", "pull_request.opened", "pull_request.ready_for_review", "pull_request.reopened", "pull_request.review_request_removed", "pull_request.review_requested", "pull_request.synchronize", "pull_request.unassigned", "pull_request.unlabeled", "pull_request.unlocked", "pull_request_review", "pull_request_review.dismissed", "pull_request_review.edited", "pull_request_review.submitted", "pull_request_review_comment", "pull_request_review_comment.created", "pull_request_review_comment.deleted", "pull_request_review_comment.edited", "pull_request_review_thread", "pull_request_review_thread.resolved", "pull_request_review_thread.unresolved", "push", "release", "release.created", "release.deleted", "release.edited", "release.prereleased", "release.published", "release.released", "release.unpublished", "repository", "repository.archived", "repository.created", "repository.deleted", "repository.edited", "repository.privatized", "repository.publicized", "repository.renamed", "repository.transferred", "repository.unarchived", "repository_dispatch", "repository_import", "repository_vulnerability_alert", "repository_vulnerability_alert.create", "repository_vulnerability_alert.dismiss", "repository_vulnerability_alert.resolve", "secret_scanning_alert", "secret_scanning_alert.created", "secret_scanning_alert.reopened", "secret_scanning_alert.resolved", "security_advisory", "security_advisory.performed", "security_advisory.published", "security_advisory.updated", "security_advisory.withdrawn", "sponsorship", "sponsorship.cancelled", "sponsorship.created", "sponsorship.edited", "sponsorship.pending_cancellation", "sponsorship.pending_tier_change", "sponsorship.tier_changed", "star", "star.created", "star.deleted", "status", "team", "team.added_to_repository", "team.created", "team.deleted", "team.edited", "team.removed_from_repository", "team_add", "watch", "watch.started", "workflow_dispatch", "workflow_job", "workflow_job.completed", "workflow_job.in_progress", "workflow_job.queued", "workflow_job.started", "workflow_run", "workflow_run.completed", "workflow_run.requested"];
 
 function handleEventHandlers(state, webhookName, handler) {
   if (!state.hooks[webhookName]) {
@@ -25292,7 +25356,7 @@ var pluginRetry = __nccwpck_require__(6298);
 var app = __nccwpck_require__(4389);
 var oauthApp = __nccwpck_require__(3493);
 
-const VERSION = "1.7.0";
+const VERSION = "1.7.1";
 
 const Octokit = core.Octokit.plugin(pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest, pluginRetry.retry // throttling
 ).defaults({
@@ -26810,25 +26874,22 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const compost_1 = __importDefault(__nccwpck_require__(1705));
 const fs_1 = __importDefault(__nccwpck_require__(5747));
-const util_1 = __nccwpck_require__(4493);
-const githubActions_1 = __nccwpck_require__(3234);
-const detect_1 = __nccwpck_require__(8056);
-const validBehavior = [
+const validBehaviors = [
     'update',
-    'delete_and_new',
-    'hide_and_new',
+    'delete-and-new',
+    'hide-and-new',
     'new',
     'latest',
 ];
-const validTargetType = ['pr', 'commit'];
+const validTargetTypes = ['pull-request', 'commit'];
 function loadBody() {
     const body = core.getInput('body');
     if (body) {
         return body;
     }
-    const bodyFile = core.getInput('bodyFile');
+    const bodyFile = core.getInput('body-file');
     if (!bodyFile) {
-        throw new Error('body or bodyFile is required');
+        throw new Error('body or body-file is required');
     }
     if (!fs_1.default.existsSync(bodyFile)) {
         throw new Error(`body-file ${bodyFile} does not exist`);
@@ -26845,61 +26906,36 @@ function comment() {
         try {
             const logger = { debug: core.debug, warn: core.warning, info: core.info };
             const behavior = core.getInput('behavior', { required: true });
-            if (!validBehavior.includes(behavior)) {
-                throw new Error(`Invalid behavior '${behavior}' must be one of: ${validBehavior.join(', ')}`);
+            if (!validBehaviors.includes(behavior)) {
+                throw new Error(`Invalid behavior '${behavior}' must be one of: ${validBehaviors.join(', ')}`);
+            }
+            const targetType = core.getInput('target-type');
+            if (targetType && !validTargetTypes.includes(targetType)) {
+                throw new Error(`Invalid target-type '${targetType}' must be one of: ${validTargetTypes.join(', ')}`);
             }
             const tag = core.getInput('tag');
-            const token = core.getInput('GITHUB_TOKEN', { required: true });
-            const compost = new compost_1.default({
+            // Need to set the environment variable because the detector requires it to detect github.
+            process.env.GITHUB_TOKEN = core.getInput('github-token', {
+                required: true,
+            });
+            const c = compost_1.default.autodetect({
+                platform: 'github',
+                targetType: targetType ? targetType : undefined,
                 tag,
-                token,
                 logger,
             });
-            const inputTargetType = core.getInput('targetType');
-            if (inputTargetType && !validTargetType.includes(inputTargetType)) {
-                throw new Error(`Invalid targetType '${inputTargetType}' must be one of: ${validTargetType.join(', ')}`);
-            }
-            process.env.GITHUB_TOKEN = token; // Need to set the environment variable because the detector requires it to detect github.
-            const detector = new githubActions_1.GitHubActionsDetector({
-                targetTypes: inputTargetType ? [inputTargetType] : undefined,
-                logger,
-            });
-            let result = null;
-            try {
-                result = detector.detect();
-                logger.debug(`Detected {platform:'${result === null || result === void 0 ? void 0 : result.platform}' project:'${result === null || result === void 0 ? void 0 : result.project}' targetType:'${result === null || result === void 0 ? void 0 : result.targetType}' targetRef:'${result === null || result === void 0 ? void 0 : result.targetRef}'}`);
-            }
-            catch (err) {
-                if (err instanceof Error && err.name === detect_1.DetectError.name) {
-                    logger.debug(err.message);
-                }
-                else {
-                    throw err;
-                }
-            }
-            const repo = core.getInput('repo') || (result === null || result === void 0 ? void 0 : result.project);
-            if (!repo) {
-                throw new Error('repo could not be detected');
-            }
-            const targetType = inputTargetType || (result === null || result === void 0 ? void 0 : result.targetType);
-            if (!targetType) {
-                throw new Error('targetType could not be detected');
-            }
-            const prNumber = core.getInput('prNumber');
-            const commitSha = core.getInput('commitSha');
-            const targetRef = prNumber || commitSha || (result === null || result === void 0 ? void 0 : result.targetRef);
-            if (!targetRef) {
-                throw new Error('targetRef could not be detected');
+            if (!c) {
+                throw new Error('GitHub could not be detected');
             }
             if (behavior === 'latest') {
-                const latestComment = yield compost.getComment('github', repo, targetType, targetRef, behavior);
+                const latestComment = yield c.getComment(behavior);
                 if (latestComment) {
-                    core.setOutput('body', (0, util_1.stripMarkdownTag)(latestComment.body));
+                    core.setOutput('body', latestComment.body);
                 }
             }
             else {
                 const body = loadBody();
-                yield compost.postComment('github', repo, targetType, targetRef, behavior, body);
+                yield c.postComment(behavior, body);
                 core.setOutput('body', body);
             }
         }
