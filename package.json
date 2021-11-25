@@ -27,7 +27,7 @@
   "dependencies": {
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.0",
-    "@infracost/compost": "0.0.4"
+    "@infracost/compost": "0.0.5"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.3.1",
