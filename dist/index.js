@@ -26867,7 +26867,7 @@ function comment() {
             let result = null;
             try {
                 result = detector.detect();
-                logger.debug(`Detected {platform:'${result.platform}' project:'${result.project}' targetType:'${result.targetType}' targetRef:'${result.targetRef}'}`);
+                logger.debug(`Detected {platform:'${result === null || result === void 0 ? void 0 : result.platform}' project:'${result === null || result === void 0 ? void 0 : result.project}' targetType:'${result === null || result === void 0 ? void 0 : result.targetType}' targetRef:'${result === null || result === void 0 ? void 0 : result.targetRef}'}`);
             }
             catch (err) {
                 if (err instanceof Error && err.name === detect_1.DetectError.name) {
