@@ -2,37 +2,28 @@ name: "Infracost Compost"
 description: Posts a comment to a github pull request or commit.
 inputs:
   behavior:
-    description: The behavior to use when posting comments. Must be one of 'update' | 'delete_and_new' | 'hide_and_new' | 'new' | 'latest'.
+    description: The behavior to use when posting comments. Must be one of 'update' | 'delete-and-new' | 'hide-and-new' | 'new' | 'latest'.
     required: false
     default: update
   body:
     description: Specify the comment body content.
     required: false
-  bodyFile:
+  body-file:
     description: Specify a path to a file containing the comment body. Mutually exclusive with body.
     required: false
   tag:
     description: Customize the comment tag. This is added to the comment as a markdown comment to detect the previously posted comments.
     required: false
-  repo:
-    description: The GitHub owner and repository name. For example, infracost/compost-action. This defaults to the GITHUB_REPOSITORY env.
+  target-type:
+    description: Which objects should be commented on. May be 'pull-request' or 'commit'.
     required: false
-  targetType:
-    description: Which objects should be commented on. May be 'pr' or 'commit'.
-    required: false
-  prNumber:
-    description: The number of the pull request to be commented on. Defaults to the pull request of the current event.
-    required: false
-  commitSha:
-    description: The sha of the commit to be commented on. Defaults to the GITHUB_SHA env. Mutually exclusive with prNumber.
-    required: false
-  GITHUB_TOKEN:
+  github-token:
     description: Defaults to {{ github.token }}.
     default: '${{ github.token }}'
     required: false
 outputs:
   body:
-    description: The body of the comment.  This is the latest existing comment when using behavior 'latest', and the comment that was posted otherwise.
+    description: The body of the comment. This is the latest existing comment when using behavior 'latest', and the comment that was posted otherwise.
 runs:
   using: node12
   main: dist/index.js

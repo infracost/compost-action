@@ -23,22 +23,18 @@ jobs:
 
 The action supports the following inputs:
 
-- `behavior`: Optional, defaults to `update`. The behavior to use when posting comments. Must be one of `update` | `delete_and_new` | `hide_and_new` | `new` | `latest`.  
+- `behavior`: Optional, defaults to `update`. The behavior to use when posting comments. Must be one of `update` | `delete-and-new` | `hide-and-new` | `new` | `latest`.  
 
 - `body`: Specify the comment body content.
 
-- `bodyFile`: Optional. Specify a path to a file containing the comment body. Mutually exclusive with body.
+- `body-file`: Optional. Specify a path to a file containing the comment body. Mutually exclusive with body.
 
 - `tag`: Optional. Customize the comment tag. This is added to the comment as a markdown comment to detect the previously posted comments.
 
-- `repo`: Optional, defaults to the `GITHUB_REPOSITORY` env. The GitHub owner and repository name. For example, 'infracost/compost-action'.
+- `target-type`: Optional. Which objects should be commented on. May be `pr` or `commit`.
 
-- `targetType`: Optional. Which objects should be commented on. May be `pr` or `commit`.
-
-- `prNumber`: Optional, defaults to the pull request of the current event. The number of the pull request to be commented on.
-
-- `GITHUB_TOKEN`: Optional, default to `${{ github.token }}`.
+- `github-token`: Optional, default to `${{ github.token }}`.
 
 ## Outputs
 
-- `body`: The body of the comment.  This is the latest existing comment when using behavior 'latest', and the comment that was posted otherwise.
+- `body`: The body of the comment. This is the latest existing comment when using behavior 'latest', and the comment that was posted otherwise.
