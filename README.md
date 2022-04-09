@@ -1,5 +1,12 @@
 # Infracost Compost Action
 
+
+## Deprecation notice
+
+⚠️ This repo is now deprecated. We have moved this functionality into the Infracost CLI via the `infracost comment` subcommand. See [the infracost comment docs](https://www.infracost.io/docs/features/cli_commands/#comment-on-pull-requests) for usage. ⚠️
+
+---
+
 Post pull request comments from multiple CI platforms.
 
 This GitHub Action posts a GitHub comment to a commit or pull request.
